@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Вход в Local Cloud</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='fontawesome.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+    <div class="header-content">
+        <div class="header-left">
+            <i class="fas fa-lock"></i>
+            <span class="header-title">Авторизация</span>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="notification" style="background: var(--danger);">
+            <i class="fas fa-exclamation-circle"></i> {{ messages[0] }}
+        </div>
+      {% endif %}
+    {% endwith %}
+    
+    <form method="post" class="login-form">
+        <div style="text-align: center; margin-bottom: 32px;">
+            <i class="fas fa-cloud" style="font-size: 64px; color: var(--primary);"></i>
+            <h1 style="margin-top: 16px; font-size: 28px; color: var(--text-dark);">Local Cloud</h1>
+            <p style="color: var(--text-gray); margin-top: 8px;">Войдите в свою учетную запись</p>
+        </div>
+        
+        <label><i class="fas fa-key"></i> Пароль:</label>
+        <input type="password" placeholder="Введите пароль" name="password" autofocus required>
+        
+        <button type="submit" class="upload-btn">
+            <i class="fas fa-sign-in-alt"></i> Войти
+        </button>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide notifications after 5 seconds
+    const notifications = document.querySelectorAll('.notification');
+    notifications.forEach(function(notification) {
+        setTimeout(function() {
+            notification.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateY(-20px)';
+            setTimeout(function() {
+                notification.remove();
+            }, 300);
+        }, 5000);
+    });
+});
+</script>
+</body>
+</html>

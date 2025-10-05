@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Local Cloud</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='fontawesome.min.css') }}">
+</head>
+<body>
+<header>
+    <div class="header-content">
+        <div class="header-left">
+            <i class="fas fa-cloud"></i>
+            <span class="header-title">Local Cloud</span>
+        </div>
+        <nav class="header-right">
+            <a href="{{ url_for('logout') }}" class="btn btn-logout">
+                <i class="fas fa-sign-out-alt"></i> Выход
+            </a>
+        </nav>
+    </div>
+</header>
+
+<div class="container">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="notification">
+            <i class="fas fa-check-circle"></i> {{ messages[0] }}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="breadcrumb">
+        {% if relpath %}
+            <a href="{{ url_for('browse', path='/'.join(relpath.split('/')[:-1])) }}" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Назад
+            </a>
+        {% else %}
+            <a href="{{ url_for('browse') }}" class="btn-back disabled">
+                <i class="fas fa-home"></i> Главная
+            </a>
+        {% endif %}
+        <div class="current-path">
+            <i class="fas fa-folder-open"></i>
+            {{ relpath if relpath else "Корневая папка" }}
+        </div>
+    </div>
+
+    {% if not dirs and not files %}
+    <div class="empty-state">
+        <i class="fas fa-inbox empty-state-icon"></i>
+        <div class="empty-state-text">Папка пуста</div>
+        <div class="empty-state-hint">Загрузите файлы используя форму ниже</div>
+    </div>
+    {% else %}
+    <div class="file-grid">
+    {% for f in dirs %}
+        <div class="card card-folder">
+            <div class="card-icon">
+                <i class="fas fa-folder"></i>
+            </div>
+            <div class="card-body">
+                <div class="card-title">{{ f }}</div>
+                <div class="card-meta">Папка</div>
+            </div>
+            <div class="card-actions">
+                <a class="btn btn-primary" href="{{ url_for('browse', path=(relpath + '/' + f).lstrip('/')) }}">
+                    <i class="fas fa-folder-open"></i> Открыть
+                </a>
+            </div>
+        </div>
+    {% endfor %}
+    {% for f in files %}
+        <div class="card card-file">
+            <div class="card-icon">
+                {% if f.lower().endswith(('.png','.jpg','.jpeg','.gif','.bmp','.webp')) %}
+                    <i class="fas fa-image"></i>
+                {% elif f.lower().endswith(('.mp4','.webm','.mov','.avi','.mkv')) %}
+                    <i class="fas fa-video"></i>
+                {% elif f.lower().endswith(('.pdf')) %}
+                    <i class="fas fa-file-pdf"></i>
+                {% elif f.lower().endswith(('.doc','.docx')) %}
+                    <i class="fas fa-file-word"></i>
+                {% elif f.lower().endswith(('.xls','.xlsx')) %}
+                    <i class="fas fa-file-excel"></i>
+                {% elif f.lower().endswith(('.zip','.rar','.7z')) %}
+                    <i class="fas fa-file-archive"></i>
+                {% elif f.lower().endswith(('.mp3','.wav','.flac','.m4a')) %}
+                    <i class="fas fa-file-audio"></i>
+                {% else %}
+                    <i class="fas fa-file"></i>
+                {% endif %}
+            </div>
+            {% if f.lower().endswith(('.png','.jpg','.jpeg','.gif','.bmp','.webp')) %}
+                <div class="card-preview" onclick="openModal('{{ url_for('download_file', path=os.path.join(relpath, f)) }}', 'image', '{{ f }}')">
+                    <img src="{{ url_for('download_file', path=os.path.join(relpath, f)) }}" alt="{{ f }}" loading="lazy">
+                    <div class="preview-overlay">
+                        <i class="fas fa-search-plus"></i>
+                    </div>
+                </div>
+            {% elif f.lower().endswith(('.mp4','.webm','.mov','.avi','.mkv')) %}
+                <div class="card-preview" onclick="openModal('{{ url_for('download_file', path=os.path.join(relpath, f)) }}', 'video', '{{ f }}')">
+                    <video preload="metadata">
+                        <source src="{{ url_for('download_file', path=os.path.join(relpath, f)) }}#t=0.1">
+                    </video>
+                    <div class="preview-overlay">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="card-body">
+                <div class="card-title">{{ f }}</div>
+            </div>
+            <div class="card-actions">
+                <a class="btn btn-download" href="{{ url_for('download_file', path=os.path.join(relpath, f)) }}">
+                    <i class="fas fa-download"></i>
+                </a>
+                <button class="btn btn-delete" onclick="confirmDelete('{{ url_for('delete_file', path=os.path.join(relpath, f)) }}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="upload-box">
+        <div class="upload-header">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <h2>Загрузить файлы</h2>
+        </div>
+        <form method="post" enctype="multipart/form-data" action="{{ url_for('upload_file') }}">
+            <input type="hidden" name="path" value="{{ relpath }}">
+            <div class="file-input-wrapper">
+                <input type="file" name="file" id="fileInput" multiple required>
+                <label for="fileInput" class="file-input-label">
+                    <i class="fas fa-folder-open"></i>
+                    <span>Нажмите для выбора файлов</span>
+                    <small>или перетащите файлы сюда</small>
+                </label>
+                <div class="file-list" id="fileList"></div>
+            </div>
+            <button type="submit" class="upload-btn">
+                <i class="fas fa-rocket"></i> Загрузить
+            </button>
+        </form>
+    </div>
+</div>
+
+<div id="mediaModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="modal-title" id="modalTitle"></span>
+            <button class="modal-close" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
